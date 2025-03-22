@@ -4,9 +4,9 @@ import numpy as np
 import pandas as pd
 import ast
 import difflib
-
+from flask_cors import CORS
 app = Flask(__name__)
-
+CORS(app)  # Enable CORS for all routes and origins
 # Load models and encoders for crop recommendation
 crop_model = joblib.load("../models/crop_recommendation_model.pkl")
 region_encoder_crop = joblib.load("../models/Region_encoder.pkl")
@@ -30,15 +30,26 @@ def clean_text_fertilizer(val):
     return str(val).strip().lower()
 
 # Soil type matching function
-def match_soil_type(user_input, encoder, cutoff=0.6):
+def match_soil_type(user_input, encoder):
     classes = list(encoder.classes_)
-    if user_input in classes:
+    user_input = clean_text(user_input).lower()  # Normalize input
+
+    # Exact match check
+    if user_input in [clean_text(cls).lower() for cls in classes]:
         return user_input
-    close_matches = difflib.get_close_matches(user_input, classes, n=1, cutoff=cutoff)
+
+    # Partial match check
+    for cls in classes:
+        if user_input in clean_text(cls).lower():
+            return cls
+
+    # Fuzzy match fallback
+    close_matches = difflib.get_close_matches(user_input, [clean_text(cls).lower() for cls in classes], n=1, cutoff=0.4)
     if close_matches:
         return close_matches[0]
-    else:
-        raise ValueError(f"Soil Type '{user_input}' not found. Available: {classes}")
+
+    # If no match is found
+    raise ValueError(f"Soil Type '{user_input}' not found. Available: {classes}")
 
 # Find the correct moisture range
 def find_moisture_range(user_moisture, encoder):
@@ -94,8 +105,8 @@ def recommend_crop():
 
         # Predict crop
         predicted_crop = crop_model.predict(feature_vector)[0]
-
-        return jsonify({"Recommended Crop": predicted_crop})
+        Recommended_Crop = predicted_crop
+        return jsonify({"Recommended_Crop": Recommended_Crop})
 
     except Exception as e:
         return jsonify({"error": str(e)})
