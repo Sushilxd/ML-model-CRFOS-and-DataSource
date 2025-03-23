@@ -54,16 +54,33 @@ def match_soil_type(user_input, encoder):
 # Find the correct moisture range
 def find_moisture_range(user_moisture, encoder):
     matching_ranges = []
-    for range_str in encoder.classes_:
+
+    # Ensure moisture is a float
+    user_moisture = float(user_moisture)
+
+    # Clean encoder classes
+    cleaned_classes = [s.replace("'", "").strip() for s in encoder.classes_]
+    print(f"Cleaned Encoder classes: {cleaned_classes}")  # Debugging output
+
+    for range_str in cleaned_classes:
         try:
-            min_val, max_val = map(float, range_str.split(','))
+            # Ensure proper splitting & conversion
+            min_str, max_str = range_str.replace(" ", "").split(',')
+            min_val, max_val = float(min_str), float(max_str)  # Explicit conversion
+
+            print(f"Checking range: {min_val} - {max_val} for moisture {user_moisture}")  # Debugging output
+
             if min_val <= user_moisture <= max_val:
-                matching_ranges.append(range_str)
-        except Exception:
-            continue
-    if not matching_ranges:
-        raise ValueError(f"No moisture range found for input moisture {user_moisture}.")
-    return matching_ranges[0]
+                print(f"✅ Found range: {range_str}")  # Debugging success case
+                return range_str
+        except ValueError as e:
+            print(f"❌ ValueError in parsing range {range_str}: {e}")  # Catch string-to-float errors
+        except Exception as e:
+            print(f"❌ Unexpected error parsing range {range_str}: {e}")  # Catch all errors
+
+    print(f"❌ No range found for moisture {user_moisture}")  # Debugging output if it fails
+    raise ValueError(f"No moisture range found for input moisture {user_moisture}.")
+
 
 # --- Crop Recommendation Route ---
 @app.route("/recommend-crop", methods=["POST"])
