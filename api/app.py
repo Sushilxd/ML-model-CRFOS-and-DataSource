@@ -192,7 +192,7 @@ def optimize_fertilizer():
     except Exception as e:
         return jsonify({"error": str(e)})
 
-@app.route("/")  # Define the homepage route
+@app.route("/")  
 def home():
     return "Welcome to the Crop Recommendation API!"
 
